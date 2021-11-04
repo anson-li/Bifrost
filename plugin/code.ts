@@ -134,13 +134,13 @@ const cloneObject = (obj: any, valuesSet = new Set()) => {
 };
 
 async function postSelection() {
-  console.log(
-    JSON.stringify(
-      figma.currentPage.selection.map((obj) => cloneObject(obj)),
-      null,
-      2
-    )
-  );
+  // console.log(
+  //   JSON.stringify(
+  //     figma.currentPage.selection.map((obj) => cloneObject(obj)),
+  //     null,
+  //     2
+  //   )
+  // );
   figma.ui.postMessage({
     type: "selectionChange",
     elements: fastClone(
@@ -325,6 +325,8 @@ function clearAllErrors() {
   });
 }
 
+let layerIndex = 0;
+
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
@@ -467,6 +469,11 @@ figma.ui.onmessage = async (msg) => {
     for (const child of baseFrame.children) {
       component.appendChild(child);
     }
+
+    // FIXME: Replace 2600 with proper component width detection
+    component.x = layerIndex * 2600;
+    layerIndex++;
+
     baseFrame.remove();
 
     figma.ui.postMessage({

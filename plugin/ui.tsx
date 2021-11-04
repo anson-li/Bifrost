@@ -1,34 +1,21 @@
-import { BuilderElement } from "@builder.io/sdk";
 import {
   Button,
   CircularProgress,
   createMuiTheme,
   CssBaseline,
   Divider,
-  FormControlLabel,
-  IconButton,
   MuiThemeProvider,
-  Switch,
-  TextField,
-  Tooltip,
-  Typography,
-  Select,
-  MenuItem,
-  withStyles,
 } from "@material-ui/core";
 import green from "@material-ui/core/colors/green";
 import Favorite from "@material-ui/icons/Favorite";
 import * as fileType from "file-type";
 import { action, computed, observable, when } from "mobx";
 import { observer } from "mobx-react";
-import * as pako from "pako";
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 import * as md5 from "spark-md5";
-import * as traverse from "traverse";
 import { arrayBufferToBase64 } from "../lib/functions/buffer-to-base64";
 import { SafeComponent } from "./classes/safe-component";
-import { settings } from "./constants/settings";
 import { theme as themeVars } from "./constants/theme";
 import { fastClone } from "./functions/fast-clone";
 import { traverseLayers } from "./functions/traverse-layers";

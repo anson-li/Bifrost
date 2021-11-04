@@ -1,0 +1,62 @@
+{
+  "name": "figma-componentizer",
+  "version": "0.0.2-2",
+  "description": "Convert components into Figma for library use.",
+  "main": "dist/main.js",
+  "browser": "dist/browser.js",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "dev:lib": "tsc -w",
+    "dev": "NODE_ENV=development webpack --mode=development --watch",
+    "build": "NODE_ENV=production tsc && webpack --mode=production",
+    "release:patch": "npm version patch && npm run build && npm publish",
+    "release:dev": "npm version prerelease && npm run build && npm publish --tag dev"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anson-li/figma-componentizer"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@builder.io/sdk": "^1.0.40",
+    "@figma/plugin-typings": "^1.19.0",
+    "@material-ui/core": "^4.3.3",
+    "@material-ui/icons": "^4.2.1",
+    "@types/escape-html": "0.0.20",
+    "@types/file-type": "^10.9.1",
+    "@types/react": "^16.8.23",
+    "@types/react-dom": "^16.8.5",
+    "@types/spark-md5": "^3.0.1",
+    "@types/traverse": "^0.6.32",
+    "css-loader": "^3.1.0",
+    "escape-html": "^1.0.3",
+    "file-type": "^12.2.0",
+    "html-webpack-inline-source-plugin": "0.0.10",
+    "html-webpack-plugin": "^3.2.0",
+    "mobx": "^5.13.0",
+    "mobx-react": "^6.1.3",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
+    "spark-md5": "^3.0.0",
+    "style-loader": "^0.23.1",
+    "ts-loader": "^6.0.4",
+    "typescript": "^3.8.3",
+    "typescript-declaration-webpack-plugin": "^0.1.1",
+    "url-loader": "^2.1.0",
+    "webpack": "^4.38.0",
+    "webpack-cli": "^3.3.6"
+  },
+  "dependencies": {
+    "@emotion/core": "^10.0.28",
+    "@types/lodash": "^4.14.168",
+    "@types/node": "^16.11.6",
+    "@types/pako": "^1.0.1",
+    "lodash": "^4.17.21",
+    "pako": "^1.0.11",
+    "react-intl": "^5.17.2",
+    "traverse": "^0.6.6"
+  }
+}

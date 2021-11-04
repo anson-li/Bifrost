@@ -33,51 +33,6 @@ import { theme as themeVars } from "./constants/theme";
 import { fastClone } from "./functions/fast-clone";
 import { traverseLayers } from "./functions/traverse-layers";
 import "./ui.css";
-import { FormattedMessage } from "react-intl";
-
-// Simple debug flag - flip when needed locally
-const useDev = false;
-
-const apiHost = useDev ? "http://localhost:5000" : "https://builder.io";
-
-const selectionToBuilder = async (
-  selection: SceneNode[]
-): Promise<BuilderElement[]> => {
-  const useGzip = true;
-
-  selection = fastClone(selection);
-
-  traverse(selection).forEach(function (item) {
-    if (this.key === "intArr") {
-      this.delete();
-    }
-  });
-
-  const res = await fetch(`${apiHost}/api/v1/figma-to-builder`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-    },
-    body: JSON.stringify(
-      useGzip
-        ? {
-            compressedNodes: pako.deflate(JSON.stringify(selection), {
-              to: "string",
-            }),
-          }
-        : {
-            nodes: selection,
-          }
-    ),
-  }).then((res) => {
-    if (!res.ok) {
-      console.error("Figma-to-builder request failed", res);
-      throw new Error("Figma-to-builder request failed");
-    }
-    return res.json();
-  });
-  return res.blocks;
-};
 
 interface ClientStorage {
   imageUrlsByHash: { [hash: string]: string | null } | undefined;
@@ -120,17 +75,6 @@ const theme = createMuiTheme({
     secondary: green,
   },
 });
-
-const StyledButton = withStyles({
-  root: {
-    fontSize: "12px",
-    padding: "8px",
-    height: "30px",
-    minHeight: "unset",
-    display: "flex",
-    justifyContent: "center",
-  },
-})(MenuItem);
 
 const BASE64_MARKER = ";base64,";
 function convertDataURIToBinary(dataURI: string) {
@@ -249,8 +193,7 @@ class App extends SafeComponent {
   @observable clientStorage: ClientStorage | null = null;
   @observable errorMessage = "";
 
-  @observable generatingCode = false;
-  @observable urlValue = "https://www.builder.io";
+  @observable urlValue = "";
   @observable width = lsGet(WIDTH_LS_KEY) || "1200";
   @observable online = navigator.onLine;
   @observable useFrames = lsGet(FRAMES_LS_KEY) || false;
@@ -266,8 +209,6 @@ class App extends SafeComponent {
   @observable shiftKeyDown = false;
   @observable altKeyDown = false;
   @observable ctrlKeyDown = false;
-  @observable showRequestFailedError = false;
-  @observable showImportInvalidError = false;
   @observable isValidImport: null | boolean = null;
   @observable.ref previewData: any;
   @observable displayFiddleUrl = "";
@@ -396,174 +337,6 @@ class App extends SafeComponent {
     this.ctrlKeyDown = event.ctrlKey;
   }
 
-  @action
-  async getCode(useFiddle = false) {
-    this.displayFiddleUrl = "";
-    this.showImportInvalidError = false;
-    this.showRequestFailedError = false;
-    if (!this.lipsum) {
-      this.selectionWithImages = null;
-      parent.postMessage(
-        {
-          pluginMessage: {
-            type: "getSelectionWithImages",
-          },
-        },
-        "*"
-      );
-
-      this.generatingCode = true;
-
-      await when(() => !!this.selectionWithImages);
-    } else {
-      this.selectionWithImages = this.selection;
-    }
-
-    if (!(this.selectionWithImages && this.selectionWithImages[0])) {
-      console.warn("No selection with images");
-      return;
-    }
-
-    // TODO: analyze if page is properly nested and annotated, if not
-    // suggest in the UI what needs grouping
-    const selectionToBuilderPromise = selectionToBuilder(
-      this.selectionWithImages as any
-    ).catch((err) => {
-      this.loadingGenerate = false;
-      this.generatingCode = false;
-      this.showRequestFailedError = true;
-      throw err;
-    });
-
-    const imagesPromises: Promise<any>[] = [];
-    const imageMap: { [key: string]: string } = {};
-    for (const layer of this.selectionWithImages as SceneNode[]) {
-      traverseLayers(layer, (node) => {
-        const imageFills = getImageFills(node as Node);
-        const image = imageFills && imageFills[0];
-        if ((image as any)?.intArr) {
-          imagesPromises.push(
-            (async () => {
-              const { id } = await fetch(`${apiHost}/api/v1/stage-image`, {
-                method: "POST",
-                body: JSON.stringify({
-                  image: arrayBufferToBase64((image as any).intArr),
-                }),
-                headers: {
-                  "content-type": "application/json",
-                },
-              }).then((res) => {
-                if (!res.ok) {
-                  console.error("Image upload failed", res);
-                  throw new Error("Image upload failed");
-                }
-                return res.json();
-              });
-              delete (node as any).intArr;
-              imageMap[node.id] = id;
-            })()
-          );
-        }
-      });
-    }
-
-    const blocks = await selectionToBuilderPromise;
-    await Promise.all(imagesPromises).catch((err) => {
-      this.loadingGenerate = false;
-      this.generatingCode = false;
-      this.showRequestFailedError = true;
-      throw err;
-    });
-
-    traverse(blocks).forEach((item) => {
-      if (item?.["@type"] === "@builder.io/sdk:Element") {
-        const image = imageMap[item.meta?.figmaLayerId];
-        if (image) {
-          const url = `https://cdn.builder.io/api/v1/image/assets%2FTEMP%2F${image}`;
-          if (item.component?.options) {
-            item.component.options.image = url;
-          } else if (item.responsiveStyles?.large?.backgroundImage) {
-            item.responsiveStyles.large.backgroundImage = `url("${url}")`;
-          }
-        }
-      }
-    });
-
-    const data = {
-      data: {
-        blocks: blocks,
-      },
-    };
-
-    this.isValidImport = null;
-    parent.postMessage(
-      {
-        pluginMessage: {
-          type: "checkIfCanGetCode",
-        },
-      },
-      "*"
-    );
-
-    this.generatingCode = true;
-
-    await when(() => typeof this.isValidImport === "boolean");
-    if (!this.isValidImport) {
-      this.generatingCode = false;
-      this.isValidImport = null;
-      this.showImportInvalidError = true;
-      return;
-    }
-    this.isValidImport = null;
-
-    const json = JSON.stringify(data);
-
-    if (useFiddle) {
-      const res = await fetch(apiHost + "/api/v1/fiddle", {
-        method: "POST",
-        headers: {
-          "content-type": "application/json",
-        },
-        body: json,
-      })
-        .then((res) => {
-          if (!res.ok) {
-            console.error("Failed to create fiddle", res);
-            throw new Error("Failed to create fiddle");
-          }
-          return res.json();
-        })
-        .catch((err) => {
-          this.generatingCode = false;
-          this.selectionWithImages = null;
-          this.showRequestFailedError = true;
-
-          throw err;
-        });
-      if (res.url) {
-        open(res.url, "_blank");
-        this.displayFiddleUrl = res.url;
-      }
-      this.generatingCode = false;
-      this.selectionWithImages = null;
-    } else {
-      const blob = new Blob([json], {
-        type: "application/json",
-      });
-
-      const link = document.createElement("a");
-      link.setAttribute("href", URL.createObjectURL(blob));
-      link.setAttribute("download", "page.builder.json");
-      document.body.appendChild(link); // Required for FF
-
-      link.click();
-      document.body.removeChild(link);
-
-      this.generatingCode = false;
-      this.selectionWithImages = null;
-    }
-  }
-
   @observable initialized = false;
 
   componentDidMount() {
@@ -686,7 +459,7 @@ class App extends SafeComponent {
               style={{
                 display: "flex",
                 alignItems: "center",
-                fontWeight: "bold",
+                fontWeight: "normal",
               }}
             >
               Import your JSON file here, and see it transform into Figma components for your library!
@@ -714,124 +487,14 @@ class App extends SafeComponent {
                 Initializing for export, this can take about a minute...
               </div>
             </div>
-          ) : this.generatingCode ? (
-            <div style={{ padding: 20 }}>
-              <div style={{ display: "flex", padding: 20 }}>
-                <CircularProgress
-                  size={30}
-                  disableShrink
-                  style={{ margin: "auto" }}
-                />
-              </div>
-              <Typography
-                variant="caption"
-                style={{
-                  textAlign: "center",
-                  marginTop: 10,
-                  color: themeVars.colors.primaryLight,
-                  marginBottom: -10,
-                  fontStyle: "italic",
-                }}
-              >
-                Processing...
-                <br />
-                This can take about a minute...
-              </Typography>
-            </div>
           ) : (
             <>
-              {this.showImportInvalidError && (
-                <div>
-                  <div
-                    style={{
-                      color: "rgb(200, 0, 0)",
-                      marginTop: 10,
-                      marginBottom: 10,
-                    }}
-                  >
-                    To import a layer, that layer and all children must use&nbsp;
-                    <a
-                      style={{
-                        color: themeVars.colors.primary,
-                      }}
-                      href="https://help.figma.com/hc/en-us/articles/360040451373-Create-dynamic-designs-with-Auto-layout"
-                      target="_blank"
-                      rel="noopenner"
-                    >
-                      autolayout.
-                    </a>
-                  </div>
-                  <div>
-                    <Button
-                      size="small"
-                      href="https://www.builder.io/c/docs/import-from-figma"
-                      target="_blank"
-                      color="primary"
-                      rel="noopenner"
-                    >
-                      Learn more
-                    </Button>
-                    <Button
-                      size="small"
-                      style={{ opacity: 0.5 }}
-                      onClick={() => {
-                        parent.postMessage(
-                          {
-                            pluginMessage: {
-                              type: "clearErrors",
-                              data: true,
-                            },
-                          },
-                          "*"
-                        );
-                        this.showImportInvalidError = false;
-                      }}
-                    >
-                      Clear errors
-                    </Button>
-                  </div>
-                </div>
-              )}
-              {this.showRequestFailedError && (
-                <div>
-                  <div
-                    style={{
-                      color: "rgb(200, 0, 0)",
-                      marginTop: 10,
-                      marginBottom: 10,
-                    }}
-                  >
-                    <FormattedMessage
-                      id="errorMessage"
-                      defaultMessage="Oh no, there was an error!"
-                    />
-                  </div>
-                  <div>
-                    <Button
-                      size="small"
-                      color="primary"
-                      href="https://www.builder.io/c/docs/import-from-figma#troubleshooting"
-                      target="_blank"
-                      rel="noopenner"
-                    >
-                      Learn more
-                    </Button>
-                    <Button
-                      size="small"
-                      style={{ opacity: 0.5 }}
-                      onClick={() => {
-                        this.showRequestFailedError = false;
-                      }}
-                    >
-                      Clear errors
-                    </Button>
-                  </div>
-                </div>
-              )}
               <a
                 onClick={() => {
                   const input = document.createElement("input");
                   input.type = "file";
+                  input.setAttribute("webkitdirectory", "");
+                  input.setAttribute("multiple", "");
                   document.body.appendChild(input);
                   input.style.visibility = "hidden";
                   input.click();
@@ -857,11 +520,11 @@ class App extends SafeComponent {
 
                   // TODO: parse and upload images!
                   input.addEventListener("change", (event) => {
-                    const file = (event.target as HTMLInputElement)
-                      .files![0];
-                    if (file) {
+                    const files = (event.target as HTMLInputElement);
+                    if (files.files) {
                       this.loading = true;
-                      var reader = new FileReader();
+                      for (let i = 0; i < files.files.length; i++) {
+                        var reader = new FileReader();
 
                       // Closure to capture the file information.
                       reader.onload = (e) => {
@@ -897,9 +560,6 @@ class App extends SafeComponent {
                                 },
                                 "*"
                               );
-                              setTimeout(() => {
-                                done();
-                              }, 1000);
                             })
                             .catch((err) => {
                               done();
@@ -912,7 +572,11 @@ class App extends SafeComponent {
                         }
                       };
 
-                      reader.readAsText(file);
+                        reader.readAsText(files.files[i]);
+                      }
+                      setTimeout(() => {
+                        done();
+                      }, 1000);
                     } else {
                       done();
                     }
@@ -937,20 +601,6 @@ class App extends SafeComponent {
         </div>
         <div>
           <Divider />
-          {useDev && (
-            <div
-              onClick={() => {
-                lsSet("builder.env", "production");
-              }}
-              style={{
-                padding: 10,
-                color: "rgb(200, 0, 0)",
-                textAlign: "center",
-              }}
-            >
-              Using dev env. Click here to reset then reload the extension
-            </div>
-          )}
           <div style={{ marginTop: 20, textAlign: "center", color: "#666" }}>
             Made with&nbsp;
             <Favorite

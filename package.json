@@ -12,7 +12,9 @@
     "dev": "NODE_ENV=development webpack --mode=development --watch",
     "build": "NODE_ENV=production tsc && webpack --mode=production",
     "release:patch": "npm version patch && npm run build && npm publish",
-    "release:dev": "npm version prerelease && npm run build && npm publish --tag dev"
+    "release:dev": "npm version prerelease && npm run build && npm publish --tag dev",
+    "lint": "eslint ./lib/* ./plugin/*",
+    "lint-fix": "eslint --fix ./lib/* ./plugin/*"
   },
   "repository": {
     "type": "git",
@@ -33,6 +35,12 @@
     "@types/traverse": "^0.6.32",
     "css-loader": "^3.1.0",
     "escape-html": "^1.0.3",
+    "eslint": "^7.2.0",
+    "eslint-config-airbnb": "^18.2.1",
+    "eslint-plugin-import": "^2.22.1",
+    "eslint-plugin-jsx-a11y": "^6.4.1",
+    "eslint-plugin-react": "^7.21.5",
+    "eslint-plugin-react-hooks": "^1.7.0",
     "file-type": "^12.2.0",
     "html-webpack-inline-source-plugin": "0.0.10",
     "html-webpack-plugin": "^3.2.0",

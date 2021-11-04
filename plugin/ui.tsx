@@ -444,7 +444,7 @@ class App extends SafeComponent {
         <div
           style={{
             padding: 15,
-            fontSize: 12,
+            fontSize: 14,
           }}
         >
           <div
@@ -462,11 +462,11 @@ class App extends SafeComponent {
                 fontWeight: "normal",
               }}
             >
-              Import your JSON file here, and see it transform into Figma components for your library!
+              Import your generated component files, and it will be automatically converted into library components.
             </div>
           </div>
 
-          {!this.initialized ? (
+          {!this.initialized || this.loading ? (
             <div>
               <div style={{ display: "flex", padding: 20 }}>
                 <CircularProgress
@@ -474,17 +474,6 @@ class App extends SafeComponent {
                   disableShrink
                   style={{ margin: "auto" }}
                 />
-              </div>
-              <div
-                id="initExport"
-                style={{
-                  textAlign: "center",
-                  fontSize: 12,
-                  opacity: 0.6,
-                  fontStyle: "italic",
-                }}
-              >
-                Initializing for export, this can take about a minute...
               </div>
             </div>
           ) : (
@@ -606,19 +595,12 @@ class App extends SafeComponent {
             <Favorite
               style={{
                 color: "rgb(236, 55, 88)",
-                fontSize: 16,
+                fontSize: 11,
                 marginTop: -2,
                 verticalAlign: "middle",
               }}
             />
-            &nbsp;by&nbsp;
-            <a
-              style={{ color: themeVars.colors.primary }}
-              href="https://github.com/anson-li/figma-componentizer"
-              target="_blank"
-            >
-              ATB Hackathon
-            </a>
+            &nbsp;by the Asgardians of the Galaxy, sponsored by our Experience Design friends.
           </div>
         </div>
       </div>

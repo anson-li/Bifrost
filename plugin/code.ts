@@ -1,7 +1,7 @@
 import { traverseLayers } from "./functions/traverse-layers";
 import { settings } from "./constants/settings";
 import { fastClone } from "./functions/fast-clone";
-import { getLayout, hasChildren, isGroupNode } from "../lib/helpers";
+import { hasChildren } from "../lib/helpers";
 
 const allPropertyNames = [
   "id",
@@ -325,136 +325,6 @@ function clearAllErrors() {
   });
 }
 
-const importableLayerTypes = new Set<NodeType>([
-  "RECTANGLE",
-  "FRAME",
-  "TEXT",
-  "COMPONENT",
-  "LINE",
-]);
-
-const isNotImportable = (node: SceneNode) =>
-  // Don't show warnings for invisble nodes, we don't import them
-  !node.visible
-    ? false
-    : ((node as FrameNode | GroupNode).children &&
-        getLayout(node) === "unknown") ||
-      !importableLayerTypes.has(node.type);
-
-const getAbsolutePositionRelativeToArtboard = (node: SceneNode) => {
-  if (
-    typeof node.x !== "number" ||
-    !node.parent ||
-    ["PAGE", "DOCUMENT"].includes(node.type)
-  ) {
-    return { x: 0, y: 0 };
-  }
-  const position = {
-    x: node.x,
-    y: node.y,
-  };
-
-  if (["PAGE", "DOCUMENT"].includes(node.parent.type)) {
-    return position;
-  }
-
-  let parent: SceneNode | null = node;
-  while ((parent = parent.parent as SceneNode | null)) {
-    if (!isGroupNode(parent) && typeof parent.x === "number") {
-      position.x += parent.x;
-      position.y += parent.y;
-    }
-    // This is the end
-    if (["PAGE", "DOCUMENT"].includes(parent.parent!?.type)) {
-      break;
-    }
-  }
-
-  return position;
-};
-
-const getAbsolutePositionRelativeToRootLayer = (
-  node: SceneNode,
-  rootPosition: { x: number; y: number }
-) => {
-  const nodeAbsolutePosition = getAbsolutePositionRelativeToArtboard(node);
-  return {
-    x: nodeAbsolutePosition.x - rootPosition.x,
-    y: nodeAbsolutePosition.y - rootPosition.y,
-  };
-};
-
-const hasInvisibleParent = (node: SceneNode): boolean => {
-  let parent: SceneNode | null = node;
-  do {
-    if (!parent.visible) {
-      return true;
-    }
-  } while ((parent = parent.parent as SceneNode | null));
-
-  return false;
-};
-
-// Returns true if valid
-async function checkIfCanGetCode() {
-  clearAllErrors();
-  const selected = figma.currentPage.selection[0];
-  if (!selected) {
-    return false;
-  }
-
-  const invalidLayers: SceneNode[] = [];
-
-  await traverseLayers(selected, (node: SceneNode) => {
-    if (!hasInvisibleParent(node) && isNotImportable(node)) {
-      invalidLayers.push(node);
-    }
-  });
-
-  if (invalidLayers.length) {
-    const errorFrame = figma.createFrame();
-    errorFrame.name = "Export to code errors - delete me anytime";
-    const absolutePosition = getAbsolutePositionRelativeToArtboard(selected);
-    errorFrame.x = absolutePosition.x;
-    errorFrame.y = absolutePosition.y;
-    errorFrame.fills = [];
-    errorFrame.resize(selected.width || 1, selected.height || 1);
-    errorFrame.setPluginData(isImportErrorsKey, "true");
-
-    for (const invalidLayer of invalidLayers) {
-      const errorLayer = figma.createRectangle();
-      errorLayer.setPluginData(isImportErrorsKey, "true");
-      errorLayer.name = `"${invalidLayer.name}" needs to use autolayout or be a rasterized image`;
-      const { x, y } = getAbsolutePositionRelativeToRootLayer(
-        invalidLayer,
-        absolutePosition
-      );
-      errorLayer.x = x;
-      errorLayer.y = y;
-      errorLayer.fills = [];
-      errorLayer.resize(invalidLayer.width || 1, invalidLayer.height || 1);
-
-      errorLayer.strokeWeight = 4;
-      errorLayer.strokes = [
-        {
-          type: "SOLID",
-          visible: true,
-          opacity: 1,
-          blendMode: "NORMAL",
-          color: {
-            r: 1,
-            g: 0,
-            b: 0,
-          },
-        },
-      ];
-      errorFrame.appendChild(errorLayer);
-    }
-  }
-
-  return !invalidLayers.length;
-}
-
 // Calls to "parent.postMessage" from within the HTML page will trigger this
 // callback. The callback will be passed the "pluginMessage" property of the
 // posted message.
@@ -476,28 +346,6 @@ figma.ui.onmessage = async (msg) => {
   if (msg.type === "setStorage") {
     const data = msg.data;
     figma.clientStorage.setAsync("data", data);
-  }
-
-  if (msg.type === "checkIfCanGetCode") {
-    const canGet = await checkIfCanGetCode();
-    figma.ui.postMessage({
-      type: "canGetCode",
-      value: canGet,
-    });
-  }
-
-  if (msg.type === "getSelectionWithImages") {
-    figma.ui.postMessage({
-      type: "selectionWithImages",
-      elements: await Promise.all(
-        figma.currentPage.selection.map((el) =>
-          serialize(el as any, {
-            withChildren: true,
-            withImages: true,
-          })
-        )
-      ),
-    });
   }
 
   if (msg.type === "updateElements") {
@@ -619,6 +467,7 @@ figma.ui.onmessage = async (msg) => {
     for (const child of baseFrame.children) {
       component.appendChild(child);
     }
+    baseFrame.remove();
 
     figma.ui.postMessage({
       type: "doneLoading",
@@ -631,7 +480,4 @@ figma.ui.onmessage = async (msg) => {
       figma.closePlugin();
     }
   }
-
-  // Make sure to close the plugin when you're done. Otherwise the plugin will
-  // keep running, which shows the cancel button at the bottom of the screen.
 };

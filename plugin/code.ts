@@ -474,14 +474,13 @@ figma.ui.onmessage = async (msg) => {
     component.x = layerIndex * 2600;
     layerIndex++;
 
-    baseFrame.remove();
-
     figma.ui.postMessage({
       type: "doneLoading",
       rootId: frameRoot.id,
     });
 
     figma.viewport.scrollAndZoomIntoView([frameRoot]);
+    baseFrame.remove();
 
     if (process.env.NODE_ENV !== "development") {
       figma.closePlugin();

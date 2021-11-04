@@ -1,5 +1,5 @@
 {
-  "name": "figma-componentizer",
+  "name": "bifrost",
   "version": "0.0.2-2",
   "description": "Convert components into Figma for library use.",
   "main": "dist/main.js",
@@ -16,7 +16,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/anson-li/figma-componentizer"
+    "url": "https://github.com/anson-li/Bifrost"
   },
   "author": "",
   "license": "MIT",

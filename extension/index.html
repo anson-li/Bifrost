@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Path Finder</title>
+
+  <script src="index.js"></script>
+
+  <link href="https://fonts.googleapis.com/css2?family=Work+Sans&display=swap" rel="stylesheet"/>
+
+  <style>
+    html {
+      background-color: #FFFFFF;
+    }
+
+    body {
+      font-family: 'Work Sans', sans-serif;
+      min-width: 320px;
+      color: #111;
+      line-height: 19px;
+      font-size: 13px;
+      margin: 0;
+    }
+
+    small {
+      background-color: #ffffff;
+      display: block;
+      margin-top: 10px;
+      opacity: 0.7;
+      font-size: 12px;
+    }
+
+    ul {
+      padding-left: 25px;
+    }
+
+    .love {
+      color: red;
+      font-size: 15px;
+    }
+
+    .love,
+    a {
+      display: inline-block;
+      vertical-align: middle;
+    }
+
+    button {
+      border: 0;
+      background-color: transparent;
+      border: 1px solid #000000;
+      padding: 8px 15px;
+      color: #000000;
+      border-radius: 5px;
+      box-shadow: none;
+      cursor: pointer;
+      transition: all 200ms;
+      text-decoration: none;
+      margin: 10px 0 0 0;
+      width: 100%;
+    }
+    button:hover {
+      background-color: #000000;
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    .cta {
+      text-align: center;
+    }
+
+    .p10 {
+      padding: 10px 20px;
+    }
+
+    .header {
+      text-align: center;
+      padding: 20px 0 20px 0;
+      font-size: 20px;
+      font-weight: bold;
+      background-color: rgba(28, 151, 204, 1);
+      color: white;
+      margin-bottom: 20px;
+    }
+
+  </style>
+</head>
+
+<body>
+  <div class="header">
+    Bifrost
+  </div>
+  <div class="p10">
+    Welcome to Bifrost! This tool allows you to export components from anywhere you see on the web, and import it into Figma.
+  </div>
+  <div class="p10">
+    <div>In order to use this tool:</div>
+    <ul>
+      <li>Click the below button to start inspection</li>
+      <li>Click any HTML element</li>
+      <li>The element's styles will be retrieved and converted into JSON for Figma integration.</li>
+    </ul>
+    <div class="cta">
+      <button id="selectElement">SELECT</button>
+    </div>
+  </div>
+
+  <small class="p10">
+    Built with <span class="love">&#9829;</span> by the Asgardians of the Galaxy, sponsored by our Experience Design friends.
+  </small>
+</body>
+
+</html>

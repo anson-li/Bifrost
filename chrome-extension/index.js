@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   selectElementButton.addEventListener('click', () => {
     // send the message to start inspection
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      chrome.tabs.sendMessage(tabs[0].id, { data: null });
+      chrome.tabs.sendMessage(tabs[0].id, { data: 'init' });
     });
 
     // close the extension popup

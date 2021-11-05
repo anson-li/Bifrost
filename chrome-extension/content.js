@@ -5,19 +5,19 @@ window.theRoom.configure({
   click(element, event) {
     event.preventDefault();
     const json = window.htmlToFigma(getSelector(element));
-    navigator
-      .clipboard
-      .writeText(
-        `{"layers": ${JSON.stringify(json)}}`,
-      )
-      .then(
-        () => {
-          alert('The JSON selector has successfully copied to clipboard!');
-        },
-        (err) => {
-          alert('The JSON selector could not be copied to clipboard!');
-        },
-      );
+    chrome.tabs.sendMessage({ data: 'download', payload: json });
+    // chrome.windows.getCurrent(function (currentWindow) {
+    //   chrome.tabs.query({ active: true, windowId: currentWindow.id }, function (activeTabs) {
+    //       activeTabs.map(function (tab) {
+    //         chrome.tabs.sendMessage(tab.id, { data: 'download', payload: json });
+    //       });
+    //   });
+    // });
+    // window.downloadFile(json);
+    // console.log(chrome);
+    // chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    //   chrome.tabs.sendMessage(tabs[0].id, { data: 'download', payload: json });
+    // });
     window.theRoom.stop(true);
   },
 });
@@ -30,5 +30,17 @@ linkElement.setAttribute('href', `data:text/css;charset=UTF-8,${encodeURICompone
 document.head.appendChild(linkElement);
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  window.theRoom.start();
+  alert(message);
+  if (message.data === 'init') {
+    alert('init');
+    window.theRoom.start();
+  }
+  else if (message.data === 'download') {
+    alert('download');
+    chrome.downloads.download({
+      filename: 'figma.json',
+      body: `{"layers": ${JSON.stringify(message.payload)}}`,
+      saveAs: true
+    });
+  }
 });

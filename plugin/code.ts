@@ -472,10 +472,8 @@ figma.ui.onmessage = async (msg) => {
 
     // FIXME: Replace 2600 with proper component width detection
     component.x = layerIndex * 2600;
+    baseFrame.x = layerIndex * 2600;
 
-    if (baseFrame.hasOwnProperty("x")) {
-      baseFrame.x = layerIndex * 2600;
-    }
     layerIndex++;
 
     figma.ui.postMessage({

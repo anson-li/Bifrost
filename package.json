@@ -13,8 +13,8 @@
     "build": "NODE_ENV=production tsc && webpack --mode=production",
     "release:patch": "npm version patch && npm run build && npm publish",
     "release:dev": "npm version prerelease && npm run build && npm publish --tag dev",
-    "lint": "eslint ./lib/* ./plugin/*",
-    "lint-fix": "eslint --fix ./lib/* ./plugin/*"
+    "lint": "eslint ./lib/* ./plugin/* ./extension/*",
+    "lint-fix": "eslint --fix ./lib/* ./plugin/* ./extension/*"
   },
   "repository": {
     "type": "git",

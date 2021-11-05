@@ -31,8 +31,8 @@ module.exports = (env, argv) => {
     {
       ...baseConfig,
       entry: {
-        ui: "./plugin/ui.tsx", // The entry point for your UI code
-        code: "./plugin/code.ts"
+        ui: "./figma-plugin/ui.tsx", // The entry point for your UI code
+        code: "./figma-plugin/code.ts"
       },
       output: {
         ...baseConfig.output,
@@ -41,7 +41,7 @@ module.exports = (env, argv) => {
       plugins: [
         ...baseConfig.plugins,
         new HtmlWebpackPlugin({
-          template: "./plugin/ui.html",
+          template: "./figma-plugin/ui.html",
           filename: "ui.html",
           inlineSource: ".(js)$",
           chunks: ["ui"]
